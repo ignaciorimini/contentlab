@@ -8,7 +8,8 @@ import {
   Settings,
   Sparkles,
   LogOut,
-  Plus
+  Plus,
+  ShoppingBag,
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -82,6 +83,13 @@ const Sidebar = () => {
         >
           <Settings size={18} />
           Settings
+        </Link>
+        <Link 
+          to="/marketplace" 
+          className={`nav-item ${location.pathname === '/marketplace' ? 'active' : ''}`}
+        >
+          <ShoppingBag size={18} />
+          Marketplace
         </Link>
       </nav>
 

@@ -6,6 +6,9 @@ import Dashboard from './pages/Dashboard';
 import CreateContent from './pages/CreateContent';
 import ContentDetail from './pages/ContentDetail';
 import Settings from './pages/Settings';
+import Landing from './pages/Landing';
+import Marketplace from './pages/Marketplace';
+import EditorPage from './pages/Editor';
 import { supabase } from './lib/supabase';
 import './App.css';
 
@@ -39,6 +42,10 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route
+          path="/"
+          element={!session ? <Landing /> : <Navigate to="/dashboard" />}
+        />
+        <Route
           path="/register"
           element={!session ? <Register /> : <Navigate to="/dashboard" />}
         />
@@ -63,8 +70,16 @@ function App() {
           element={session ? <Settings /> : <Navigate to="/login" />}
         />
         <Route
+          path="/marketplace"
+          element={session ? <Marketplace /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/editor"
+          element={session ? <EditorPage /> : <Navigate to="/login" />}
+        />
+        <Route
           path="*"
-          element={<Navigate to={session ? "/dashboard" : "/login"} />}
+          element={<Navigate to={session ? "/dashboard" : "/"} />}
         />
       </Routes>
     </BrowserRouter>
