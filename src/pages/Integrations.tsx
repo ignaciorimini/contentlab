@@ -10,8 +10,7 @@ import {
   Trash2, 
   CheckCircle2,
   AlertCircle,
-  X,
-  Loader2
+  X
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import './Integrations.css';

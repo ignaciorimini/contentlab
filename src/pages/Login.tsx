@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+// Removed import
 import { Eye, EyeOff, Component, Github, Mail, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import './Register.css'; // Reuse the register styling for 50/50 layout
 
 const Login = () => {
-  const navigate = useNavigate();
+  // navigate removed
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Bell, Plus, Copy, MoreVertical, Download, Share2, Play } from 'lucide-react';
+import { Search, Bell, Plus, Copy, MoreVertical, Download } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import { supabase } from '../lib/supabase';
 import './Dashboard.css';

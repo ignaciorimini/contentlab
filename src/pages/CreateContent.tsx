@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import CarouselEditor from '../components/CarouselEditor';
 import type { EditableSlide } from '../components/CarouselEditor';
 import './CreateContent.css';
 

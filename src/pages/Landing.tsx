@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Play, ArrowRight, Check } from 'lucide-react';
+import { Play, ArrowRight } from 'lucide-react';
 import './Landing.css';
 import MockupImage from '../assets/mockup.png';
 

@@ -8,7 +8,7 @@ import './Settings.css';
 const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [, setUser] = useState<User | null>(null);
   const [googleConnected, setGoogleConnected] = useState(false);
   const [apiKeys, setApiKeys] = useState({
     gemini_api_key: '',

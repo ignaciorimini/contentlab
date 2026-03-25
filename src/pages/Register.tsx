@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+// Removed import
 import { Eye, EyeOff, Component, Github, Mail, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import './Register.css';
 
 const Register = () => {
-  const navigate = useNavigate();
+  // navigate removed
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',

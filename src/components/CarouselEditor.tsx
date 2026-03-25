@@ -25,8 +25,7 @@ const CarouselEditor = ({ slides: initialSlides, onSave, width = 1080, height = 
 
   // Scale computation to fit preview
   const scale = 500 / height; // e.g., if height is 1080, scale it down so it fits nicely
-  const displayWidth = width * scale;
-  const displayHeight = height * scale;
+  // displayWidth and displayHeight removed due to unused vars
 
   // Habilitar edición de texto en el HTML
   useEffect(() => {
