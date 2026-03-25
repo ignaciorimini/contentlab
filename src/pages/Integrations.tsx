@@ -42,13 +42,42 @@ const Integrations = () => {
     const state = searchParams.get('state');
 
     if (code && state === 'instagram_auth') {
-      // Estamos volviendo de Meta OAuth
       setLoading(true);
-      setError('Recibimos el código de autorización de Meta. Próximo paso: Procesarlo en una Supabase Edge Function...');
+      setError('Intercambiando código con Meta de forma segura...');
       
-      // Limpiamos la URL para no volver a ejecutar esto
-      setSearchParams({});
-      setLoading(false);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // Llamar a nuestra Serverless Function de Vercel
+        const response = await fetch('/api/auth-instagram', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`
+          },
+          body: JSON.stringify({ 
+            code, 
+            redirectUri: REDIRECT_URI 
+          })
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok) throw new Error(result.error || 'Error desconocido del servidor');
+
+        // Éxito: Agregamos la nueva cuenta a nuestro estado en UI
+        setAccounts((prev) => [...prev, result.account]);
+        setError('');
+        alert('¡Cuenta de Instagram conectada exitosamente!');
+        
+      } catch (err: any) {
+        console.error(err);
+        setError('Falló la conexión de Instagram: ' + err.message);
+      } finally {
+        // Limpiamos la URL para no intentar volver a conectarnos al regargar la página
+        setSearchParams({});
+        setLoading(false);
+      }
     }
   };
 
