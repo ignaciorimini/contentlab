@@ -144,6 +144,125 @@
   filter: brightness(1.1);
 }
 
+/* Modal Publish Styles */
+.publish-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.publish-modal-content {
+  background: #0f0a18;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  padding: 2rem;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+.publish-modal-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.publish-modal-header h2 {
+  color: white;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.3rem;
+}
+
+.publish-modal-header p {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+}
+
+.accounts-list-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.account-select-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.account-select-card:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.account-select-card.selected {
+  border-color: var(--primary, #8c2bee);
+  background: rgba(140, 43, 238, 0.1);
+}
+
+.acc-icon-mini {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.05);
+}
+
+.btn-publish-final {
+  background: var(--primary, #8c2bee);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.2s;
+}
+
+.btn-publish-final:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.accounts-list-selection::-webkit-scrollbar {
+  width: 6px;
+}
+.accounts-list-selection::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+.accounts-list-selection::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+
 @media (max-width: 1024px) {
   .detail-grid {
     grid-template-columns: 1fr;

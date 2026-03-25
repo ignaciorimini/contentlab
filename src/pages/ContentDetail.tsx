@@ -6,23 +6,38 @@ import {
   ArrowLeft, 
   Download, 
   Copy, 
-  Share2, 
   Sparkles, 
   Clipboard,
   Calendar,
-  Type
+  Type,
+  Send,
+  X,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Globe
 } from 'lucide-react';
 import './ContentDetail.css';
 
 const ContentDetail = () => {
   const { id } = useParams();
   const [content, setContent] = useState<any>(null);
+  const [accounts, setAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
+  // Publish Modal State
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishStatus, setPublishStatus] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
+
   useEffect(() => {
     const fetchContent = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { data, error } = await supabase
         .from('content')
         .select('*')
@@ -34,6 +49,15 @@ const ContentDetail = () => {
       } else {
         setContent(data);
       }
+
+      // Fetch social accounts
+      const { data: accData } = await supabase
+        .from('social_accounts')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (accData) setAccounts(accData);
+      
       setLoading(false);
     };
 
@@ -95,6 +119,66 @@ const ContentDetail = () => {
       navigator.clipboard.writeText(textToCopy);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!selectedAccountId) {
+      setPublishStatus({ type: 'error', msg: 'Selecciona una red social primero.' });
+      return;
+    }
+
+    const account = accounts.find(a => a.id === selectedAccountId);
+    if (!account) return;
+
+    setIsPublishing(true);
+    setPublishStatus(null);
+    try {
+      let textToPublish = socialText;
+      let imgToPublish = content.image_url;
+
+      if (isCarousel && carouselSlides.length > 0) {
+        textToPublish = carouselSlides[0].text;
+        imgToPublish = carouselSlides[0].imageUrl;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const res = await fetch('/api/publish-social', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          accountId: account.id,
+          contentId: content.id,
+          text: textToPublish,
+          imageUrl: imgToPublish,
+          platform: account.platform
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al publicar');
+
+      setPublishStatus({ type: 'success', msg: data.message });
+      setTimeout(() => setIsPublishModalOpen(false), 3000); // Cerrar luego de 3 segundos
+    } catch (err: any) {
+      setPublishStatus({ type: 'error', msg: err.message });
+      console.error(err);
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  const renderPlatformIcon = (platform: string) => {
+    switch (platform.toLowerCase()) {
+      case 'instagram': return <Instagram size={18} color="#E1306C" />;
+      case 'linkedin': return <Linkedin size={18} color="#0A66C2" />;
+      case 'twitter': return <Twitter size={18} color="#1DA1F2" />;
+      case 'wordpress': return <Globe size={18} color="#21759B" />;
+      default: return <Globe size={18} />;
     }
   };
 
@@ -180,8 +264,8 @@ const ContentDetail = () => {
                         <Download size={16} /> Descargar Todo
                      </button>
                   )}
-                  <button className="btn-detail outline">
-                    <Share2 size={16} />
+                  <button onClick={() => setIsPublishModalOpen(true)} className="btn-detail primary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginLeft: 'auto', background: '#gradient', backgroundColor: 'var(--primary)', borderColor: 'transparet' }}>
+                    <Send size={16} /> Publicar ahora
                   </button>
                 </div>
               </div>
@@ -189,6 +273,72 @@ const ContentDetail = () => {
           </div>
         </div>
       </main>
+
+      {/* Modal de Publicación */}
+      {isPublishModalOpen && (
+        <div className="publish-modal-overlay">
+          <div className="publish-modal-content">
+            <button className="publish-modal-close" onClick={() => setIsPublishModalOpen(false)} disabled={isPublishing}>
+              <X size={20} />
+            </button>
+            <div className="publish-modal-header">
+              <h2>¿Dónde quieres publicar el contenido?</h2>
+              <p>Selecciona una red conectada para enviar tu imagen y texto instantáneamente.</p>
+            </div>
+
+            {publishStatus?.type === 'error' && (
+              <div style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem' }}>
+                {publishStatus.msg}
+              </div>
+            )}
+            
+            {publishStatus?.type === 'success' && (
+              <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem', textAlign: 'center', fontWeight: 'bold' }}>
+                {publishStatus.msg} 🚀
+              </div>
+            )}
+
+            {!publishStatus || publishStatus.type === 'error' ? (
+              <>
+                <div className="accounts-list-selection">
+                  {accounts.length > 0 ? (
+                    accounts.map(acc => (
+                      <div 
+                        key={acc.id} 
+                        className={`account-select-card ${selectedAccountId === acc.id ? 'selected' : ''}`}
+                        onClick={() => setSelectedAccountId(acc.id)}
+                      >
+                        <div className="acc-icon-mini bg-white/10">
+                          {renderPlatformIcon(acc.platform)}
+                        </div>
+                        <div className="acc-info-mini">
+                          <h4 style={{ margin: 0, color: 'white', fontSize: '0.95rem' }}>{acc.account_name}</h4>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{acc.platform.toUpperCase()}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                      No tienes cuentas vinculadas. <br/>
+                      <Link to="/integrations" style={{ color: 'var(--primary)', marginTop: '0.5rem', display: 'inline-block' }}>Ir a Integraciones</Link>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem' }}>
+                  <button 
+                    onClick={handlePublish}
+                    className="btn-publish-final" 
+                    disabled={isPublishing || accounts.length === 0 || !selectedAccountId}
+                  >
+                    {isPublishing ? 'Enviando...' : 'Publicar post'} <Send size={16} style={{ marginLeft: '4px' }} />
+                  </button>
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
