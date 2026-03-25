@@ -10,6 +10,8 @@ const Dashboard = () => {
   const [contents, setContents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [totalCount, setTotalCount] = useState(0);
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
@@ -19,14 +21,17 @@ const Dashboard = () => {
       }
 
       if (user) {
-        const { data, error } = await supabase
+        // Fetch only the latest 8 items to improve performance
+        const { data, count, error } = await supabase
           .from('content')
-          .select('*')
+          .select('id, title, content_type, created_at, image_url, description', { count: 'exact' })
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .range(0, 7);
 
         if (!error && data) {
           setContents(data);
+          setTotalCount(count || 0);
         }
       }
       setLoading(false);
@@ -68,7 +73,7 @@ const Dashboard = () => {
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-title">Total Assets</div>
-            <div className="stat-value">{contents.length}</div>
+            <div className="stat-value">{totalCount}</div>
             <div className="stat-trend trend-up">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
               12% this month
@@ -77,7 +82,7 @@ const Dashboard = () => {
 
           <div className="stat-card">
             <div className="stat-title">AI Generations</div>
-            <div className="stat-value">{contents.filter(c => c.content_type === 'SOCIAL').length}</div>
+            <div className="stat-value">{totalCount}</div>
             <div className="stat-trend trend-up">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
               24% this month

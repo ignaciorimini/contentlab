@@ -9,6 +9,7 @@ import Settings from './pages/Settings';
 import Landing from './pages/Landing';
 import Marketplace from './pages/Marketplace';
 import EditorPage from './pages/Editor';
+import Integrations from './pages/Integrations';
 import { supabase } from './lib/supabase';
 import './App.css';
 
@@ -76,6 +77,10 @@ function App() {
         <Route
           path="/editor"
           element={session ? <EditorPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/integrations"
+          element={session ? <Integrations /> : <Navigate to="/login" />}
         />
         <Route
           path="*"

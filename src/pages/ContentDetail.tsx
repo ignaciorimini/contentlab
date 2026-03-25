@@ -19,6 +19,7 @@ const ContentDetail = () => {
   const [content, setContent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -39,13 +40,7 @@ const ContentDetail = () => {
     fetchContent();
   }, [id]);
 
-  const handleCopyText = () => {
-    if (content?.description) {
-      navigator.clipboard.writeText(content.description);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
+  // El handler original ha sido movido hacia abajo donde variables están definidas
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString() + ' ' + new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -79,6 +74,30 @@ const ContentDetail = () => {
     );
   }
 
+  let isCarousel = content.content_type === 'CAROUSEL';
+  let carouselSlides: any[] = [];
+  let socialText = content.description;
+
+  if (isCarousel && content.description) {
+    try {
+      carouselSlides = JSON.parse(content.description);
+    } catch (e) {
+      console.error("Failed to parse carousel slides");
+    }
+  }
+
+  const handleCopyText = () => {
+    let textToCopy = socialText;
+    if (isCarousel && carouselSlides.length > 0) {
+      textToCopy = carouselSlides[currentSlide]?.text || socialText;
+    }
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
     <div className="detail-container">
       <Sidebar />
@@ -90,7 +109,18 @@ const ContentDetail = () => {
         <div className="detail-grid">
           <div className="detail-visual">
             <div className="detail-image-wrapper">
-              <img src={content.image_url} alt={content.title} className="detail-image" />
+              {isCarousel && carouselSlides.length > 0 ? (
+                <>
+                  <img src={carouselSlides[currentSlide].imageUrl} alt={`Slide ${currentSlide + 1}`} className="detail-image" />
+                  <div className="slide-nav" style={{ marginTop: '1rem', display: 'flex', gap: '1rem', justifyContent: 'center', alignItems: 'center' }}>
+                    <button disabled={currentSlide === 0} onClick={() => setCurrentSlide(s => s - 1)} className="btn-detail outline" style={{ padding: '0.4rem 0.8rem' }}>←</button>
+                    <span style={{color: 'white', fontWeight: 'bold'}}>Slide {currentSlide + 1} / {carouselSlides.length}</span>
+                    <button disabled={currentSlide === carouselSlides.length - 1} onClick={() => setCurrentSlide(s => s + 1)} className="btn-detail outline" style={{ padding: '0.4rem 0.8rem' }}>→</button>
+                  </div>
+                </>
+              ) : (
+                <img src={content.image_url} alt={content.title} className="detail-image" />
+              )}
             </div>
           </div>
 
@@ -120,14 +150,36 @@ const ContentDetail = () => {
                 <Type size={14} /> Texto Generado
               </span>
               <div className="content-box">
-                <p className="detail-body">{content.description}</p>
-                <div className="detail-actions">
+                <p className="detail-body">
+                  {isCarousel && carouselSlides.length > 0 ? carouselSlides[currentSlide]?.text : socialText}
+                </p>
+                <div className="detail-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <button onClick={handleCopyText} className={`btn-detail ${copied ? 'outline' : 'primary'}`}>
                     {copied ? <><Clipboard size={16} /> ¡Copiado!</> : <><Copy size={16} /> Copiar Texto</>}
                   </button>
-                  <button className="btn-detail outline">
-                    <Download size={16} /> Descargar Imagen
+                  <button onClick={() => {
+                     const link = document.createElement('a');
+                     link.href = isCarousel && carouselSlides.length > 0 ? carouselSlides[currentSlide]?.imageUrl : content.image_url;
+                     link.download = `contentlab-image-${isCarousel ? currentSlide + 1 : 1}.png`;
+                     link.click();
+                  }} className="btn-detail outline">
+                    <Download size={16} /> {isCarousel ? 'Descargar Slide' : 'Descargar Imagen'}
                   </button>
+                  {isCarousel && carouselSlides.length > 1 && (
+                     <button onClick={() => {
+                        carouselSlides.forEach((slide, i) => {
+                           // Timeout to prevent browser from blocking multiple rapid downloads
+                           setTimeout(() => {
+                               const link = document.createElement('a');
+                               link.href = slide.imageUrl;
+                               link.download = `contentlab-slide-${i + 1}.png`;
+                               link.click();
+                           }, i * 300);
+                        });
+                     }} className="btn-detail outline">
+                        <Download size={16} /> Descargar Todo
+                     </button>
+                  )}
                   <button className="btn-detail outline">
                     <Share2 size={16} />
                   </button>

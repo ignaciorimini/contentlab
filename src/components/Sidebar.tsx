@@ -10,6 +10,7 @@ import {
   LogOut,
   Plus,
   ShoppingBag,
+  Share2,
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -90,6 +91,13 @@ const Sidebar = () => {
         >
           <ShoppingBag size={18} />
           Marketplace
+        </Link>
+        <Link 
+          to="/integrations" 
+          className={`nav-item ${location.pathname === '/integrations' ? 'active' : ''}`}
+        >
+          <Share2 size={18} />
+          Integrations
         </Link>
       </nav>
 
