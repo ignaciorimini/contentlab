@@ -12,9 +12,9 @@ export default async function handler(request, response) {
     const supabase = createClient(
       process.env.VITE_SUPABASE_URL,
       process.env.VITE_SUPABASE_ANON_KEY,
-      { global: { headers: { Authorization: authHeader } } } 
+      { global: { headers: { Authorization: authHeader } } }
     );
-    
+
     // Verificar si el usuario está autenticado
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) throw new Error("No autorizado");
@@ -29,20 +29,26 @@ export default async function handler(request, response) {
 
     if (accError) throw new Error("Cuenta no encontrada o sin permisos");
 
-    // Simularemos la llamada oficial a la API de Graph (Post a IG o LinkedIn)
-    // En la vida real, este código sería:
-    /*
-      if (platform === 'instagram') {
-        // Paso 1: Crear Contenedor
-        const mediaReq = await fetch(`https://graph.facebook.com/v19.0/${accountData.platform_account_id}/media?image_url=${imageUrl}&caption=${encodeURIComponent(text)}&access_token=${accountData.access_token}`, { method: 'POST' });
-        const mediaData = await mediaReq.json();
-        // Paso 2: Publicar Contenedor
-        await fetch(`https://graph.facebook.com/v19.0/${accountData.platform_account_id}/media_publish?creation_id=${mediaData.id}&access_token=${accountData.access_token}`, { method: 'POST' });
-      }
-    */
+    if (platform === 'instagram') {
+      // Paso 1: Crear Contenedor
+      const mediaReq = await fetch(`https://graph.facebook.com/v19.0/${accountData.platform_account_id}/media?image_url=${encodeURIComponent(imageUrl)}&caption=${encodeURIComponent(text)}&access_token=${accountData.access_token}`, { method: 'POST' });
+      const mediaData = await mediaReq.json();
 
-    // Simular un retraso de procesamiento para dar feedback al usuario
-    await new Promise(resolve => setTimeout(resolve, 2000));
+      if (mediaData.error) {
+        throw new Error(mediaData.error.message || "Error al crear contenedor en Instagram");
+      }
+
+      // Paso 2: Publicar Contenedor
+      const publishReq = await fetch(`https://graph.facebook.com/v19.0/${accountData.platform_account_id}/media_publish?creation_id=${mediaData.id}&access_token=${accountData.access_token}`, { method: 'POST' });
+      const publishData = await publishReq.json();
+
+      if (publishData.error) {
+        throw new Error(publishData.error.message || "Error al publicar en Instagram");
+      }
+    } else {
+      // Simular un retraso de procesamiento para dar feedback al usuario en otras plataformas no implementadas
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
 
     // Opcional: Podríamos marcar este contenido como "Publicado" en la tabla 'content'.
 

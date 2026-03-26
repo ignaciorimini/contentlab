@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { 
-  LayoutDashboard, 
-  Folder, 
+import {
+  LayoutDashboard,
+  Folder,
   Database,
   Settings,
   Sparkles,
@@ -11,6 +11,7 @@ import {
   Plus,
   ShoppingBag,
   Share2,
+  BarChart2,
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -47,57 +48,64 @@ const Sidebar = () => {
       </div>
 
       <nav className="sidebar-nav">
-        <Link 
-          to="/create" 
+        <Link
+          to="/create"
           className="nav-item nav-item-create"
         >
           <Plus size={18} />
           Crear Contenido
         </Link>
-        
+
         <div style={{ marginBottom: '1rem' }}></div>
 
-        <Link 
-          to="/dashboard" 
+        <Link
+          to="/dashboard"
           className={`nav-item ${location.pathname === '/dashboard' ? 'active' : ''}`}
         >
           <LayoutDashboard size={18} />
           Dashboard
         </Link>
-        <Link 
-          to="#" 
+        <Link
+          to="#"
           className={`nav-item ${location.pathname === '/projects' ? 'active' : ''}`}
         >
           <Folder size={18} />
           Projects
         </Link>
-        <Link 
-          to="#" 
+        <Link
+          to="#"
           className={`nav-item ${location.pathname === '/assets' ? 'active' : ''}`}
         >
           <Database size={18} />
           Assets
         </Link>
-        <Link 
-          to="/settings" 
+        <Link
+          to="/settings"
           className={`nav-item ${location.pathname === '/settings' ? 'active' : ''}`}
         >
           <Settings size={18} />
           Settings
         </Link>
-        <Link 
-          to="/marketplace" 
+        <Link
+          to="/marketplace"
           className={`nav-item ${location.pathname === '/marketplace' ? 'active' : ''}`}
         >
           <ShoppingBag size={18} />
           Marketplace
         </Link>
-        <Link 
-          to="/integrations" 
+        <Link
+          to="/integrations"
           className={`nav-item ${location.pathname === '/integrations' ? 'active' : ''}`}
         >
           <Share2 size={18} />
           Integrations
+        </Link>
+        <Link
+          to="/metrics"
+          className={`nav-item ${location.pathname === '/metrics' ? 'active' : ''}`}
+        >
+          <BarChart2 size={18} />
+          Metrics
         </Link>
       </nav>
 

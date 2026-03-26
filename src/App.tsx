@@ -10,6 +10,7 @@ import Landing from './pages/Landing';
 import Marketplace from './pages/Marketplace';
 import EditorPage from './pages/Editor';
 import Integrations from './pages/Integrations';
+import Metrics from './pages/Metrics';
 import { supabase } from './lib/supabase';
 import './App.css';
 
@@ -81,6 +82,10 @@ function App() {
         <Route
           path="/integrations"
           element={session ? <Integrations /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/metrics"
+          element={session ? <Metrics /> : <Navigate to="/login" />}
         />
         <Route
           path="*"

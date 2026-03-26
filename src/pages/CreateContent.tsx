@@ -48,6 +48,15 @@ const CreateContent = () => {
   const [duplicatedSlideUrl, setDuplicatedSlideUrl] = useState<string | null>(null);
   const [slidePlaceholders, setSlidePlaceholders] = useState<string[]>([]); // Placeholders detected from the selected template
   const [slideConfigs, setSlideConfigs] = useState<Array<{ prompt: string, refImage: string | null }>>([]);
+  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  // Auto-hide toast after 3s
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
 
   // Sync slide configs array length with numSlides
   useEffect(() => {
@@ -160,7 +169,7 @@ const CreateContent = () => {
       if (!settings?.gemini_api_key) throw new Error("Configura tu API Key de Gemini.");
 
       const genAI = new GoogleGenerativeAI(settings.gemini_api_key);
-      const model = genAI.getGenerativeModel({ 
+      const model = genAI.getGenerativeModel({
         model: "gemini-2.5-flash",
         generationConfig: { responseMimeType: "application/json" }
       });
@@ -202,10 +211,10 @@ NOTA: si el nombre del campo tiene saltos de línea, escribilos como un espacio 
       const geminiRes = await model.generateContent(geminiPrompt);
       const usage = geminiRes.response?.usageMetadata;
       if (usage) {
-         setUsageMetrics({
-           tokens: usage.totalTokenCount || 0,
-           cost: (usage.promptTokenCount / 1000000) * 0.075 + (usage.candidatesTokenCount / 1000000) * 0.30
-         });
+        setUsageMetrics({
+          tokens: usage.totalTokenCount || 0,
+          cost: (usage.promptTokenCount / 1000000) * 0.075 + (usage.candidatesTokenCount / 1000000) * 0.30
+        });
       }
 
       const geminiText = geminiRes.response.text();
@@ -287,20 +296,20 @@ NOTA: si el nombre del campo tiene saltos de línea, escribilos como un espacio 
 
   const uploadImageToStorage = async (base64OrUrl: string, userId: string): Promise<string> => {
     if (!base64OrUrl.startsWith('data:image')) return base64OrUrl;
-    
+
     try {
       const res = await fetch(base64OrUrl);
       const blob = await res.blob();
       const ext = blob.type.split('/')[1] || 'png';
       const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`;
-      
+
       // Upload to 'content-assets' bucket
       const { error } = await supabase.storage.from('content-assets').upload(fileName, blob, {
         contentType: blob.type
       });
-      
+
       if (error) throw error;
-      
+
       const { data } = supabase.storage.from('content-assets').getPublicUrl(fileName);
       return data.publicUrl;
     } catch (err) {
@@ -352,10 +361,10 @@ NOTA: si el nombre del campo tiene saltos de línea, escribilos como un espacio 
         });
 
       if (error) throw error;
-      alert("¡Contenido guardado exitosamente!");
+      setToastMessage({ type: 'success', text: '¡Contenido guardado exitosamente!' });
     } catch (err: any) {
       console.error("Error saving content:", err);
-      alert("Error al guardar: " + err.message);
+      setToastMessage({ type: 'error', text: "Error al guardar: " + err.message });
     } finally {
       setIsSaving(false);
     }
@@ -390,9 +399,9 @@ NOTA: si el nombre del campo tiene saltos de línea, escribilos como un espacio 
       }
 
       const genAI = new GoogleGenerativeAI(settings.gemini_api_key);
-      const model = genAI.getGenerativeModel({ 
+      const model = genAI.getGenerativeModel({
         model: "gemini-2.5-flash",
-        generationConfig: { 
+        generationConfig: {
           responseMimeType: "application/json",
           maxOutputTokens: 8192
         }
@@ -536,25 +545,25 @@ ${slideConfigs.map((cfg, i) => cfg.prompt ? `Slide ${i + 1}: ${cfg.prompt}` : ''
           const result = await model.generateContent(parts);
           const usage = result.response?.usageMetadata;
           if (usage) {
-             setUsageMetrics({
-               tokens: usage.totalTokenCount || 0,
-               cost: (usage.promptTokenCount / 1000000) * 0.075 + (usage.candidatesTokenCount / 1000000) * 0.30
-             });
+            setUsageMetrics({
+              tokens: usage.totalTokenCount || 0,
+              cost: (usage.promptTokenCount / 1000000) * 0.075 + (usage.candidatesTokenCount / 1000000) * 0.30
+            });
           }
           let cleanText = result.response.text().replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '').trim();
-          
+
           let data;
           try {
-             data = JSON.parse(cleanText);
+            data = JSON.parse(cleanText);
           } catch (e) {
-             console.error("Fallo parseo JSON:", cleanText);
-             throw new Error("JSON Inválido devuelto por el modelo. Por favor vuelve a intentarlo.");
+            console.error("Fallo parseo JSON:", cleanText);
+            throw new Error("JSON Inválido devuelto por el modelo. Por favor vuelve a intentarlo.");
           }
 
           // Convertimos strings HTML a Slide Objects
           const rawHtmlArray = data.slides_html_strings || data.slides || data.html_strings || [];
           if (rawHtmlArray.length === 0) {
-             throw new Error("El modelo generó un arreglo de slides vacío.");
+            throw new Error("El modelo generó un arreglo de slides vacío.");
           }
 
           const finalSlides = rawHtmlArray.map((htmlStr: string, i: number) => ({
@@ -589,34 +598,34 @@ ${slideConfigs.map((cfg, i) => cfg.prompt ? `Slide ${i + 1}: ${cfg.prompt}` : ''
           // Important: it cannot be hidden with display:none or html2canvas skips it.
           // Keep it fixed outside the viewport.
           container.style.position = 'fixed';
-          container.style.left = '200vw'; 
+          container.style.left = '200vw';
           container.style.top = '0';
           container.style.width = width + 'px';
           container.style.height = height + 'px';
           // Agregamos bg color default para exportaciones limpias.
-          container.style.backgroundColor = '#0a050f'; 
+          container.style.backgroundColor = '#0a050f';
           document.body.appendChild(container);
 
           const pngSlides = [];
           for (let i = 0; i < finalSlides.length; i++) {
             const slide = finalSlides[i];
-            
+
             // Inyectar HTML e inferir compilación Tailwind.
             container.innerHTML = `
               <div style="width: 100%; height: 100%; overflow: hidden;">
                 ${slide.html}
               </div>
             `;
-            
+
             // Forzar una pequeñísima mutación de clase para que CDN Tailwind procese a la fuerza (trick)
             container.classList.add('tw-process-' + i);
-            
+
             // Pausa obligatoria extendida para que Tailwind genere los estilos de las clases nuevas CSSOM
             await new Promise(r => setTimeout(r, 1500));
-            
-            const canvas = await html2canvas(container, { 
-              scale: 1, 
-              useCORS: true, 
+
+            const canvas = await html2canvas(container, {
+              scale: 1,
+              useCORS: true,
               logging: false,
               backgroundColor: null // let the html dictate the color
             });
@@ -624,7 +633,7 @@ ${slideConfigs.map((cfg, i) => cfg.prompt ? `Slide ${i + 1}: ${cfg.prompt}` : ''
           }
 
           document.body.removeChild(container);
-          
+
           setEditableCarouselData(finalSlides);
           setCarouselData(pngSlides);
 
@@ -661,8 +670,8 @@ ${slideConfigs.map((cfg, i) => cfg.prompt ? `Slide ${i + 1}: ${cfg.prompt}` : ''
           let cst = 0;
           const usage = result.response?.usageMetadata;
           if (usage) {
-             tk = usage.totalTokenCount || 0;
-             cst += (usage.promptTokenCount / 1000000) * 0.075 + (usage.candidatesTokenCount / 1000000) * 0.30;
+            tk = usage.totalTokenCount || 0;
+            cst += (usage.promptTokenCount / 1000000) * 0.075 + (usage.candidatesTokenCount / 1000000) * 0.30;
           }
 
           const textResponse = result.response.text();
@@ -674,7 +683,7 @@ ${slideConfigs.map((cfg, i) => cfg.prompt ? `Slide ${i + 1}: ${cfg.prompt}` : ''
           for (let i = 0; i < data.slides.length; i++) {
             const slide = data.slides[i];
             const slideRefImg = slideConfigs[i]?.refImage || refImage;
-            
+
             cst += imageModel === "nano-banana" ? 0.01 : imageModel === "nano-banana-pro" ? 0.03 : 0.01;
             if (!settings.nano_banana_api_key) {
               throw new Error("Por favor configura tu Nano Banana API Key (Google API Key) en Configuración.");
@@ -687,32 +696,32 @@ ${slideConfigs.map((cfg, i) => cfg.prompt ? `Slide ${i + 1}: ${cfg.prompt}` : ''
             let imgRes;
 
             if (isImagen) {
-               // Imagen usa el endpoint /predict y una firma diferente
-               imgRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:predict?key=${settings.nano_banana_api_key}`, {
-                 method: "POST", headers: { "Content-Type": "application/json" },
-                 body: JSON.stringify({
-                   instances: [{ prompt: `High quality digital art. ${slide.image_prompt}. INCLUIR COMO TIPOGRAFÍA Y DISEÑO GRÁFICO TEXTUAL DENTRO DE LA IMAGEN: "${slide.text}". Estilo: ${style}.` }],
-                   parameters: { sampleCount: 1, aspectRatio: aspectRatio === '1:1' ? '1:1' : aspectRatio === '9:16' ? '9:16' : '16:9' }
-                 })
-               });
+              // Imagen usa el endpoint /predict y una firma diferente
+              imgRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:predict?key=${settings.nano_banana_api_key}`, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  instances: [{ prompt: `High quality digital art. ${slide.image_prompt}. INCLUIR COMO TIPOGRAFÍA Y DISEÑO GRÁFICO TEXTUAL DENTRO DE LA IMAGEN: "${slide.text}". Estilo: ${style}.` }],
+                  parameters: { sampleCount: 1, aspectRatio: aspectRatio === '1:1' ? '1:1' : aspectRatio === '9:16' ? '9:16' : '16:9' }
+                })
+              });
             } else {
-               // Gemini (Image Preview) usa /generateContent
-               const imgParts: any[] = [{ text: `FORMATO ${aspectRatio === '9:16' ? 'VERTICAL 9:16' : aspectRatio === '16:9' ? 'HORIZONTAL 16:9' : 'CUADRADO 1:1'}. ${slide.image_prompt}. DEBES INCLUIR COMO TIPOGRAFÍA Y DISEÑO GRÁFICO CLARAMENTE CENTRAL DENTRO DE LA IMAGEN: "${slide.text}". Estilo: ${style}. High quality digital art.` }];
-               
-               if (slideRefImg) {
-                  imgParts.push({ inlineData: { mimeType: "image/png", data: slideRefImg.split(',')[1] } });
-                  imgParts[0].text += "\\nIMPORTANTE: DEBES RECREAR ESTA IMAGEN DE REFERENCIA EXACTAMENTE (misma composición, colores y estilo) PERO reemplazando textos e ilustraciones de manera coherente con el prompt.";
-               }
+              // Gemini (Image Preview) usa /generateContent
+              const imgParts: any[] = [{ text: `FORMATO ${aspectRatio === '9:16' ? 'VERTICAL 9:16' : aspectRatio === '16:9' ? 'HORIZONTAL 16:9' : 'CUADRADO 1:1'}. ${slide.image_prompt}. DEBES INCLUIR COMO TIPOGRAFÍA Y DISEÑO GRÁFICO CLARAMENTE CENTRAL DENTRO DE LA IMAGEN: "${slide.text}". Estilo: ${style}. High quality digital art.` }];
 
-               imgRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:generateContent?key=${settings.nano_banana_api_key}`, {
-                 method: "POST", headers: { "Content-Type": "application/json" },
-                 body: JSON.stringify({
-                   contents: [{ parts: imgParts }],
-                   generationConfig: {
-                     responseModalities: ["IMAGE"]
-                   }
-                 })
-               });
+              if (slideRefImg) {
+                imgParts.push({ inlineData: { mimeType: "image/png", data: slideRefImg.split(',')[1] } });
+                imgParts[0].text += "\\nIMPORTANTE: DEBES RECREAR ESTA IMAGEN DE REFERENCIA EXACTAMENTE (misma composición, colores y estilo) PERO reemplazando textos e ilustraciones de manera coherente con el prompt.";
+              }
+
+              imgRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:generateContent?key=${settings.nano_banana_api_key}`, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{ parts: imgParts }],
+                  generationConfig: {
+                    responseModalities: ["IMAGE"]
+                  }
+                })
+              });
             }
 
             if (!imgRes.ok) {
@@ -720,13 +729,13 @@ ${slideConfigs.map((cfg, i) => cfg.prompt ? `Slide ${i + 1}: ${cfg.prompt}` : ''
               throw new Error(errorData.error?.message || "Error al llamar a Google AI Studio para imagen de carrusel");
             }
             const imgData = await imgRes.json();
-            
+
             // Extraer Base64 dependiendo de la respuesta (Gemini o Imagen)
             let base64 = null;
             if (isImagen) {
-               base64 = imgData.predictions?.[0]?.bytesBase64Encoded;
+              base64 = imgData.predictions?.[0]?.bytesBase64Encoded;
             } else {
-               base64 = imgData.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+              base64 = imgData.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
             }
             finalSlides.push({
               text: slide.text,
@@ -754,8 +763,8 @@ ${slideConfigs.map((cfg, i) => cfg.prompt ? `Slide ${i + 1}: ${cfg.prompt}` : ''
         let cst = 0;
         const usage = result.response?.usageMetadata;
         if (usage) {
-           tk = usage.totalTokenCount || 0;
-           cst += (usage.promptTokenCount / 1000000) * 0.075 + (usage.candidatesTokenCount / 1000000) * 0.30;
+          tk = usage.totalTokenCount || 0;
+          cst += (usage.promptTokenCount / 1000000) * 0.075 + (usage.candidatesTokenCount / 1000000) * 0.30;
         }
 
         const output = result.response.text();
@@ -765,7 +774,7 @@ ${slideConfigs.map((cfg, i) => cfg.prompt ? `Slide ${i + 1}: ${cfg.prompt}` : ''
 
         // 2. Generate Image with Nano Banana 2 (Google AI Studio API Call)
         cst += imageModel === "nano-banana" ? 0.01 : imageModel === "nano-banana-pro" ? 0.03 : 0.01;
-        
+
         let imageUrl = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop";
 
         if (!settings.nano_banana_api_key) {
@@ -781,33 +790,33 @@ ${slideConfigs.map((cfg, i) => cfg.prompt ? `Slide ${i + 1}: ${cfg.prompt}` : ''
           let response;
 
           if (isImagen) {
-             response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:predict?key=${settings.nano_banana_api_key}`, {
-               method: "POST", headers: { "Content-Type": "application/json" },
-               body: JSON.stringify({
-                 instances: [{ prompt: `High-quality professional social media image: ${visualPrompt}. Cyberpunk nebula style, premium digital art.` }],
-                 parameters: { sampleCount: 1, aspectRatio: aspectRatio === '1:1' ? '1:1' : aspectRatio === '9:16' ? '9:16' : '16:9' }
-               })
-             });
+            response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:predict?key=${settings.nano_banana_api_key}`, {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                instances: [{ prompt: `High-quality professional social media image: ${visualPrompt}. Cyberpunk nebula style, premium digital art.` }],
+                parameters: { sampleCount: 1, aspectRatio: aspectRatio === '1:1' ? '1:1' : aspectRatio === '9:16' ? '9:16' : '16:9' }
+              })
+            });
           } else {
-             const imgParts: any[] = [{ text: `FORMATO ${aspectRatio === '9:16' ? 'VERTICAL 9:16' : aspectRatio === '16:9' ? 'HORIZONTAL 16:9' : 'CUADRADO 1:1'}. Generate a high-quality, professional social media image for this post: ${visualPrompt}. Cyberpunk nebula style, premium digital art.` }];
-             
-             if (refImage) {
-                imgParts.push({ inlineData: { mimeType: "image/png", data: refImage.split(',')[1] } });
-                imgParts[0].text += "\\nIMPORTANTE: DEBES RECREAR ESTA IMAGEN DE REFERENCIA EXACTAMENTE (misma composición, estructura general y estilo) PERO reemplazando elementos acordes al prompt.";
-             }
+            const imgParts: any[] = [{ text: `FORMATO ${aspectRatio === '9:16' ? 'VERTICAL 9:16' : aspectRatio === '16:9' ? 'HORIZONTAL 16:9' : 'CUADRADO 1:1'}. Generate a high-quality, professional social media image for this post: ${visualPrompt}. Cyberpunk nebula style, premium digital art.` }];
 
-             response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:generateContent?key=${settings.nano_banana_api_key}`, {
-               method: "POST",
-               headers: {
-                 "Content-Type": "application/json",
-               },
-               body: JSON.stringify({
-                 contents: [{ parts: imgParts }],
-                 generationConfig: {
-                   responseModalities: ["IMAGE"]
-                 }
-               })
-             });
+            if (refImage) {
+              imgParts.push({ inlineData: { mimeType: "image/png", data: refImage.split(',')[1] } });
+              imgParts[0].text += "\\nIMPORTANTE: DEBES RECREAR ESTA IMAGEN DE REFERENCIA EXACTAMENTE (misma composición, estructura general y estilo) PERO reemplazando elementos acordes al prompt.";
+            }
+
+            response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${apiModel}:generateContent?key=${settings.nano_banana_api_key}`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                contents: [{ parts: imgParts }],
+                generationConfig: {
+                  responseModalities: ["IMAGE"]
+                }
+              })
+            });
           }
 
           if (!response.ok) {
@@ -822,11 +831,11 @@ ${slideConfigs.map((cfg, i) => cfg.prompt ? `Slide ${i + 1}: ${cfg.prompt}` : ''
           let mimeType = "image/png";
 
           if (isImagen) {
-             imageDataByte = data.predictions?.[0]?.bytesBase64Encoded;
-             mimeType = "image/jpeg"; // Imagen defaults to JPEG Base64 payload without mimetype declared in output
+            imageDataByte = data.predictions?.[0]?.bytesBase64Encoded;
+            mimeType = "image/jpeg"; // Imagen defaults to JPEG Base64 payload without mimetype declared in output
           } else {
-             imageDataByte = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-             mimeType = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.mimeType || "image/png";
+            imageDataByte = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+            mimeType = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.mimeType || "image/png";
           }
 
           if (imageDataByte) {
@@ -1378,6 +1387,28 @@ ${slideConfigs.map((cfg, i) => cfg.prompt ? `Slide ${i + 1}: ${cfg.prompt}` : ''
           </div>
         </div>
       </main>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          backgroundColor: toastMessage.type === 'success' ? 'rgba(16, 185, 129, 0.95)' : 'rgba(239, 68, 68, 0.95)',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          zIndex: 9999,
+          animation: 'slideIn 0.3s ease-out'
+        }}>
+          {toastMessage.type === 'success' ? <CheckCircle2 size={20} /> : <X size={20} />}
+          <span style={{ fontWeight: 500 }}>{toastMessage.text}</span>
+        </div>
+      )}
     </div>
   );
 };
