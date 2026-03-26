@@ -29,9 +29,25 @@ export default async function handler(request, response) {
 
     if (accError) throw new Error("Cuenta no encontrada o sin permisos");
 
+    let igAccountId = accountData.platform_account_id;
+
     if (platform === 'instagram') {
+      const pagesReq = await fetch(`https://graph.facebook.com/v19.0/me/accounts?access_token=${accountData.access_token}`);
+      const pagesData = await pagesReq.json();
+
+      if (!pagesData.error && pagesData.data && pagesData.data.length > 0) {
+        for (const page of pagesData.data) {
+          const igReq = await fetch(`https://graph.facebook.com/v19.0/${page.id}?fields=instagram_business_account&access_token=${accountData.access_token}`);
+          const igData = await igReq.json();
+          if (igData && igData.instagram_business_account) {
+            igAccountId = igData.instagram_business_account.id;
+            break;
+          }
+        }
+      }
+
       // Paso 1: Crear Contenedor
-      const mediaReq = await fetch(`https://graph.facebook.com/v19.0/${accountData.platform_account_id}/media?image_url=${encodeURIComponent(imageUrl)}&caption=${encodeURIComponent(text)}&access_token=${accountData.access_token}`, { method: 'POST' });
+      const mediaReq = await fetch(`https://graph.facebook.com/v19.0/${igAccountId}/media?image_url=${encodeURIComponent(imageUrl)}&caption=${encodeURIComponent(text)}&access_token=${accountData.access_token}`, { method: 'POST' });
       const mediaData = await mediaReq.json();
 
       if (mediaData.error) {
@@ -39,7 +55,7 @@ export default async function handler(request, response) {
       }
 
       // Paso 2: Publicar Contenedor
-      const publishReq = await fetch(`https://graph.facebook.com/v19.0/${accountData.platform_account_id}/media_publish?creation_id=${mediaData.id}&access_token=${accountData.access_token}`, { method: 'POST' });
+      const publishReq = await fetch(`https://graph.facebook.com/v19.0/${igAccountId}/media_publish?creation_id=${mediaData.id}&access_token=${accountData.access_token}`, { method: 'POST' });
       const publishData = await publishReq.json();
 
       if (publishData.error) {

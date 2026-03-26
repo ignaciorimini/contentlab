@@ -36,19 +36,34 @@ export default async function handler(request, response) {
         // Asumiremos la primera cuenta de IG para el panel general, o podríamos iterar
         const accountData = accounts[0];
 
-        // 2. Obtener métricas de la cuenta (Insights basicos)
-        // Para obtener seguidores en IG requiere permisos específicos, pero podemos pedir datos 
-        // del perfil con ?fields=followers_count,media_count
-        const igProfileReq = await fetch(`https://graph.facebook.com/v19.0/${accountData.platform_account_id}?fields=followers_count,media_count&access_token=${accountData.access_token}`);
+        // 2. Resolver el ID real de Instagram (el DB guarda FB User ID por defecto)
+        let igAccountId = accountData.platform_account_id;
+
+        // Pedimos las páginas que maneja el usuario para encontrar la cuenta de IG Profesional
+        const pagesReq = await fetch(`https://graph.facebook.com/v19.0/me/accounts?access_token=${accountData.access_token}`);
+        const pagesData = await pagesReq.json();
+
+        if (!pagesData.error && pagesData.data && pagesData.data.length > 0) {
+            for (const page of pagesData.data) {
+                const igReq = await fetch(`https://graph.facebook.com/v19.0/${page.id}?fields=instagram_business_account&access_token=${accountData.access_token}`);
+                const igData = await igReq.json();
+                if (igData && igData.instagram_business_account) {
+                    igAccountId = igData.instagram_business_account.id;
+                    break;
+                }
+            }
+        }
+
+        // 3. Obtener métricas de la cuenta de IG
+        const igProfileReq = await fetch(`https://graph.facebook.com/v19.0/${igAccountId}?fields=followers_count,media_count&access_token=${accountData.access_token}`);
         const profileData = await igProfileReq.json();
 
         if (profileData.error) {
-            throw new Error(`Error de Graph API: ${profileData.error.message}`);
+            throw new Error(`${profileData.error.message}`);
         }
 
-        // 3. Obtener métricas de posts anteriores 
-        // Pedimos los posts con likes y comments
-        const mediaReq = await fetch(`https://graph.facebook.com/v19.0/${accountData.platform_account_id}/media?fields=like_count,comments_count&limit=50&access_token=${accountData.access_token}`);
+        // 4. Obtener métricas de posts anteriores usando el ID correcto
+        const mediaReq = await fetch(`https://graph.facebook.com/v19.0/${igAccountId}/media?fields=like_count,comments_count&limit=50&access_token=${accountData.access_token}`);
         const mediaListData = await mediaReq.json();
 
         let totalLikes = 0;
