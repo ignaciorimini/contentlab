@@ -54,6 +54,10 @@ export default async function handler(request, response) {
             }
         }
 
+        if (igAccountId === accountData.platform_account_id) {
+            throw new Error("No se encontró una cuenta de Instagram Profesional vinculada a tus páginas de Facebook. Asegúrate de tenerla conectada.");
+        }
+
         // 3. Obtener métricas de la cuenta de IG
         const igProfileReq = await fetch(`https://graph.facebook.com/v19.0/${igAccountId}?fields=followers_count,media_count&access_token=${accountData.access_token}`);
         const profileData = await igProfileReq.json();
