@@ -109,7 +109,9 @@ const Integrations = () => {
         'instagram_basic',
         'instagram_content_publish',
         'pages_show_list',
-        'pages_read_engagement'
+        'pages_read_engagement',
+        'pages_manage_metadata',
+        'business_management'
       ].join(',');
 
       const facebookOAuthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${FACEBOOK_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&state=instagram_auth&scope=${scopes}&response_type=code`;
