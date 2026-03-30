@@ -67,24 +67,27 @@ export default async function handler(request, response) {
         }
 
         // 4. Obtener métricas de posts anteriores usando el ID correcto
-        const mediaReq = await fetch(`https://graph.facebook.com/v19.0/${igAccountId}/media?fields=like_count,comments_count&limit=50&access_token=${accountData.access_token}`);
+        const mediaReq = await fetch(`https://graph.facebook.com/v19.0/${igAccountId}/media?fields=like_count,comments_count,media_url,caption,permalink,thumbnail_url,media_type,timestamp&limit=50&access_token=${accountData.access_token}`);
         const mediaListData = await mediaReq.json();
 
         let totalLikes = 0;
         let totalComments = 0;
+        let recentPosts = [];
 
         if (!mediaListData.error && mediaListData.data) {
             mediaListData.data.forEach(post => {
                 totalLikes += post.like_count || 0;
                 totalComments += post.comments_count || 0;
             });
+            recentPosts = mediaListData.data.slice(0, 12);
         }
 
         const metrics = {
             followers_count: profileData.followers_count || 0,
             media_count: profileData.media_count || 0,
             total_likes: totalLikes,
-            total_comments: totalComments
+            total_comments: totalComments,
+            recent_posts: recentPosts
         };
 
         return response.status(200).json({ success: true, metrics });

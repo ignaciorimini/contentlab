@@ -3,22 +3,33 @@ import { supabase } from '../lib/supabase';
 import Sidebar from '../components/Sidebar';
 import {
     BarChart2,
-    TrendingUp,
     Users,
     Heart,
     MessageCircle,
-    Share2,
     FileText,
     Activity,
     Globe
 } from 'lucide-react';
 import './Metrics.css';
 
+interface InstagramPost {
+    id: string;
+    caption?: string;
+    media_url: string;
+    thumbnail_url?: string;
+    permalink: string;
+    media_type: string;
+    like_count: number;
+    comments_count: number;
+    timestamp: string;
+}
+
 interface InstagramMetrics {
     followers_count: number;
     media_count: number;
     total_likes: number;
     total_comments: number;
+    recent_posts: InstagramPost[];
 }
 
 const Metrics = () => {
@@ -124,21 +135,41 @@ const Metrics = () => {
                             </div>
                         </div>
 
-                        <div className="charts-section">
-                            <div className="chart-card">
-                                <h3>Tendencia de Crecimiento</h3>
-                                <div className="chart-placeholder">
-                                    <TrendingUp size={48} color="rgba(255,255,255,0.1)" />
-                                    <p>Gráfico de crecimiento en construcción.</p>
+                        <div className="recent-posts-section">
+                            <h2 className="section-title">Últimas Publicaciones</h2>
+                            {metrics?.recent_posts && metrics.recent_posts.length > 0 ? (
+                                <div className="posts-grid">
+                                    {metrics.recent_posts.map(post => (
+                                        <div key={post.id} className="post-card">
+                                            <a href={post.permalink} target="_blank" rel="noopener noreferrer" className="post-image-container">
+                                                {post.media_type === 'VIDEO' ? (
+                                                    <img src={post.thumbnail_url || post.media_url} alt="Video thumbnail" className="post-image" loading="lazy" />
+                                                ) : (
+                                                    <img src={post.media_url} alt="Post" className="post-image" loading="lazy" />
+                                                )}
+                                                <div className="post-overlay">
+                                                    Ver en Instagram
+                                                </div>
+                                            </a>
+                                            <div className="post-content">
+                                                <p className="post-caption">{post.caption ? (post.caption.length > 80 ? post.caption.substring(0, 80) + '...' : post.caption) : 'Sin descripción'}</p>
+                                                <div className="post-stats">
+                                                    <div className="post-stat">
+                                                        <Heart size={16} />
+                                                        <span>{post.like_count || 0}</span>
+                                                    </div>
+                                                    <div className="post-stat">
+                                                        <MessageCircle size={16} />
+                                                        <span>{post.comments_count || 0}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            </div>
-                            <div className="chart-card">
-                                <h3>Rendimiento del Contenido Reciente</h3>
-                                <div className="chart-placeholder">
-                                    <Share2 size={48} color="rgba(255,255,255,0.1)" />
-                                    <p>Comparación de publicaciones en construcción.</p>
-                                </div>
-                            </div>
+                            ) : (
+                                <p className="no-posts-text">No hay publicaciones recientes para mostrar.</p>
+                            )}
                         </div>
                     </div>
                 )}
