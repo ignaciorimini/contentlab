@@ -196,6 +196,16 @@
     font-weight: 600;
 }
 
+.section-header {
+    margin-bottom: 1.5rem;
+}
+
+.section-subtitle {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin: 0.25rem 0 0 0;
+}
+
 .posts-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -274,9 +284,10 @@
     flex: 1;
 }
 
-.post-stats {
-    display: flex;
-    gap: 1rem;
+.post-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+    gap: 0.5rem;
     border-top: 1px solid var(--border);
     padding-top: 0.75rem;
     margin-top: auto;
@@ -285,14 +296,51 @@
 .post-stat {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    font-size: 0.85rem;
+    justify-content: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
     color: var(--text);
     font-weight: 600;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.4rem;
+    border-radius: 6px;
 }
 
 .post-stat svg {
+    color: var(--text-muted);
+}
+
+.insight-like svg { color: #f472b6; }
+.insight-comment svg { color: #34d399; }
+.insight-save svg { color: #fbbf24; }
+.insight-share svg { color: #818cf8; }
+.insight-play svg { color: #e879f9; }
+
+.load-more-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 2.5rem;
+}
+
+.btn-load-more {
+    background: transparent;
     color: var(--primary);
+    border: 1px solid var(--primary);
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-load-more:hover:not(:disabled) {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-load-more:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .no-posts-text {
