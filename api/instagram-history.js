@@ -67,13 +67,13 @@ export default async function handler(request, response) {
             mediaListData.data.map(async (post) => {
                 let metrics = '';
                 if (post.media_product_type === 'REELS') {
-                    // Para reels
-                    metrics = 'plays,saved,shares';
+                    // Para reels en API v22+ usamos 'views' en vez de 'plays'
+                    metrics = 'views,saved,shares';
                 } else if (post.media_type === 'VIDEO') {
                     // Videos viejos que no son reels
-                    metrics = 'video_views,saved';
+                    metrics = 'views,saved';
                 } else if (post.media_type === 'IMAGE' || post.media_type === 'CAROUSEL_ALBUM') {
-                    metrics = 'saved'; 
+                    metrics = 'views,saved'; 
                 }
 
                 let insightsData = { saved: 0, shares: 0, plays: 0 };
@@ -88,7 +88,7 @@ export default async function handler(request, response) {
                             insightsRes.data.forEach(item => {
                                 if (item.name === 'saved') insightsData.saved = item.values[0].value;
                                 if (item.name === 'shares') insightsData.shares = item.values[0].value;
-                                if (item.name === 'plays' || item.name === 'video_views') insightsData.plays = item.values[0].value;
+                                if (item.name === 'views') insightsData.plays = item.values[0].value;
                             });
                         } else if (insightsRes.error) {
                             debug_error = insightsRes.error;
