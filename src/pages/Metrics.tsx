@@ -30,6 +30,7 @@ interface InstagramPost {
         shares: number;
         plays: number;
     }
+    debug_error?: any;
 }
 
 interface InstagramMetrics {
@@ -248,6 +249,11 @@ const Metrics = () => {
                                                             </div>
                                                         )}
                                                     </div>
+                                                    {post.debug_error && (
+                                                        <div style={{color: '#ef4444', fontSize: '10px', marginTop: '4px', wordBreak: 'break-all'}}>
+                                                            Error API: {typeof post.debug_error === 'string' ? post.debug_error : JSON.stringify(post.debug_error)}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
