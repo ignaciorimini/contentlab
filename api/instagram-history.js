@@ -52,7 +52,7 @@ export default async function handler(request, response) {
         }
 
         // Fetch paginated media
-        let url = `https://graph.facebook.com/v19.0/${igAccountId}/media?fields=like_count,comments_count,media_url,caption,permalink,thumbnail_url,media_type,timestamp&limit=${limit}&access_token=${accountData.access_token}`;
+        let url = `https://graph.facebook.com/v19.0/${igAccountId}/media?fields=like_count,comments_count,media_url,caption,permalink,thumbnail_url,media_type,media_product_type,timestamp&limit=${limit}&access_token=${accountData.access_token}`;
         if (after) {
             url += `&after=${after}`;
         }
@@ -66,14 +66,18 @@ export default async function handler(request, response) {
         const postsWithInsights = await Promise.all(
             mediaListData.data.map(async (post) => {
                 let metrics = '';
-                if (post.media_type === 'VIDEO') {
+                if (post.media_product_type === 'REELS') {
                     // Para reels
                     metrics = 'plays,saved,shares';
+                } else if (post.media_type === 'VIDEO') {
+                    // Videos viejos que no son reels
+                    metrics = 'video_views,saved';
                 } else if (post.media_type === 'IMAGE' || post.media_type === 'CAROUSEL_ALBUM') {
                     metrics = 'saved'; 
                 }
 
                 let insightsData = { saved: 0, shares: 0, plays: 0 };
+                let debug_error = null;
                 
                 if (metrics) {
                     try {
@@ -84,17 +88,22 @@ export default async function handler(request, response) {
                             insightsRes.data.forEach(item => {
                                 if (item.name === 'saved') insightsData.saved = item.values[0].value;
                                 if (item.name === 'shares') insightsData.shares = item.values[0].value;
-                                if (item.name === 'plays') insightsData.plays = item.values[0].value;
+                                if (item.name === 'plays' || item.name === 'video_views') insightsData.plays = item.values[0].value;
                             });
+                        } else if (insightsRes.error) {
+                            debug_error = insightsRes.error;
+                            console.warn(`Error fetching insights for ${post.id}:`, insightsRes.error);
                         }
                     } catch (e) {
-                         console.warn(`Failed fetching insights for ${post.id}`, e);
+                         debug_error = e.message;
+                         console.warn(`Exception fetching insights for ${post.id}`, e);
                     }
                 }
 
                 return {
                     ...post,
-                    advanced_metrics: insightsData
+                    advanced_metrics: insightsData,
+                    debug_error
                 };
             })
         );
