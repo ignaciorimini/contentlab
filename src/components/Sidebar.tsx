@@ -12,6 +12,7 @@ import {
   ShoppingBag,
   Share2,
   BarChart2,
+  Bot
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -64,6 +65,13 @@ const Sidebar = () => {
         >
           <LayoutDashboard size={18} />
           Dashboard
+        </Link>
+        <Link
+          to="/copilot"
+          className={`nav-item ${location.pathname === '/copilot' ? 'active' : ''}`}
+        >
+          <Bot size={18} />
+          AI Copilot
         </Link>
         <Link
           to="#"

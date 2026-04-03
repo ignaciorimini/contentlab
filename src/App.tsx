@@ -11,6 +11,7 @@ import Marketplace from './pages/Marketplace';
 import EditorPage from './pages/Editor';
 import Integrations from './pages/Integrations';
 import Metrics from './pages/Metrics';
+import AICopilot from './pages/AICopilot';
 import { supabase } from './lib/supabase';
 import './App.css';
 
@@ -86,6 +87,10 @@ function App() {
         <Route
           path="/metrics"
           element={session ? <Metrics /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/copilot"
+          element={session ? <AICopilot /> : <Navigate to="/login" />}
         />
         <Route
           path="*"
