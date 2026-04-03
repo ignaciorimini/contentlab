@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import Sidebar from '../components/Sidebar';
-import { 
-  ArrowLeft, 
-  Download, 
-  Copy, 
-  Sparkles, 
+import {
+  ArrowLeft,
+  Download,
+  Copy,
+  Sparkles,
   Clipboard,
   Calendar,
   Type,
@@ -57,7 +57,7 @@ const ContentDetail = () => {
         .eq('user_id', user.id);
 
       if (accData) setAccounts(accData);
-      
+
       setLoading(false);
     };
 
@@ -108,6 +108,15 @@ const ContentDetail = () => {
     } catch (e) {
       console.error("Failed to parse carousel slides");
     }
+  } else if (!isCarousel && content.description) {
+    try {
+      // In case the AI outputted raw JSON instead of plain string
+      const parsed = JSON.parse(content.description);
+      if (parsed.TEXTO) socialText = parsed.TEXTO;
+      else if (parsed.text) socialText = parsed.text;
+    } catch (e) {
+      // It's a plain string, do nothing
+    }
   }
 
   const handleCopyText = () => {
@@ -143,7 +152,7 @@ const ContentDetail = () => {
       }
 
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       const res = await fetch('/api/publish-social', {
         method: 'POST',
         headers: {
@@ -198,7 +207,7 @@ const ContentDetail = () => {
                   <img src={carouselSlides[currentSlide].imageUrl} alt={`Slide ${currentSlide + 1}`} className="detail-image" />
                   <div className="slide-nav" style={{ marginTop: '1rem', display: 'flex', gap: '1rem', justifyContent: 'center', alignItems: 'center' }}>
                     <button disabled={currentSlide === 0} onClick={() => setCurrentSlide(s => s - 1)} className="btn-detail outline" style={{ padding: '0.4rem 0.8rem' }}>←</button>
-                    <span style={{color: 'white', fontWeight: 'bold'}}>Slide {currentSlide + 1} / {carouselSlides.length}</span>
+                    <span style={{ color: 'white', fontWeight: 'bold' }}>Slide {currentSlide + 1} / {carouselSlides.length}</span>
                     <button disabled={currentSlide === carouselSlides.length - 1} onClick={() => setCurrentSlide(s => s + 1)} className="btn-detail outline" style={{ padding: '0.4rem 0.8rem' }}>→</button>
                   </div>
                 </>
@@ -242,27 +251,27 @@ const ContentDetail = () => {
                     {copied ? <><Clipboard size={16} /> ¡Copiado!</> : <><Copy size={16} /> Copiar Texto</>}
                   </button>
                   <button onClick={() => {
-                     const link = document.createElement('a');
-                     link.href = isCarousel && carouselSlides.length > 0 ? carouselSlides[currentSlide]?.imageUrl : content.image_url;
-                     link.download = `contentlab-image-${isCarousel ? currentSlide + 1 : 1}.png`;
-                     link.click();
+                    const link = document.createElement('a');
+                    link.href = isCarousel && carouselSlides.length > 0 ? carouselSlides[currentSlide]?.imageUrl : content.image_url;
+                    link.download = `contentlab-image-${isCarousel ? currentSlide + 1 : 1}.png`;
+                    link.click();
                   }} className="btn-detail outline">
                     <Download size={16} /> {isCarousel ? 'Descargar Slide' : 'Descargar Imagen'}
                   </button>
                   {isCarousel && carouselSlides.length > 1 && (
-                     <button onClick={() => {
-                        carouselSlides.forEach((slide, i) => {
-                           // Timeout to prevent browser from blocking multiple rapid downloads
-                           setTimeout(() => {
-                               const link = document.createElement('a');
-                               link.href = slide.imageUrl;
-                               link.download = `contentlab-slide-${i + 1}.png`;
-                               link.click();
-                           }, i * 300);
-                        });
-                     }} className="btn-detail outline">
-                        <Download size={16} /> Descargar Todo
-                     </button>
+                    <button onClick={() => {
+                      carouselSlides.forEach((slide, i) => {
+                        // Timeout to prevent browser from blocking multiple rapid downloads
+                        setTimeout(() => {
+                          const link = document.createElement('a');
+                          link.href = slide.imageUrl;
+                          link.download = `contentlab-slide-${i + 1}.png`;
+                          link.click();
+                        }, i * 300);
+                      });
+                    }} className="btn-detail outline">
+                      <Download size={16} /> Descargar Todo
+                    </button>
                   )}
                   <button onClick={() => setIsPublishModalOpen(true)} className="btn-detail primary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginLeft: 'auto', background: '#gradient', backgroundColor: 'var(--primary)', borderColor: 'transparet' }}>
                     <Send size={16} /> Publicar ahora
@@ -291,7 +300,7 @@ const ContentDetail = () => {
                 {publishStatus.msg}
               </div>
             )}
-            
+
             {publishStatus?.type === 'success' && (
               <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem', textAlign: 'center', fontWeight: 'bold' }}>
                 {publishStatus.msg} 🚀
@@ -303,8 +312,8 @@ const ContentDetail = () => {
                 <div className="accounts-list-selection">
                   {accounts.length > 0 ? (
                     accounts.map(acc => (
-                      <div 
-                        key={acc.id} 
+                      <div
+                        key={acc.id}
                         className={`account-select-card ${selectedAccountId === acc.id ? 'selected' : ''}`}
                         onClick={() => setSelectedAccountId(acc.id)}
                       >
@@ -319,16 +328,16 @@ const ContentDetail = () => {
                     ))
                   ) : (
                     <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                      No tienes cuentas vinculadas. <br/>
+                      No tienes cuentas vinculadas. <br />
                       <Link to="/integrations" style={{ color: 'var(--primary)', marginTop: '0.5rem', display: 'inline-block' }}>Ir a Integraciones</Link>
                     </div>
                   )}
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2rem' }}>
-                  <button 
+                  <button
                     onClick={handlePublish}
-                    className="btn-publish-final" 
+                    className="btn-publish-final"
                     disabled={isPublishing || accounts.length === 0 || !selectedAccountId}
                   >
                     {isPublishing ? 'Enviando...' : 'Publicar post'} <Send size={16} style={{ marginLeft: '4px' }} />
