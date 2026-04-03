@@ -122,9 +122,9 @@ const Integrations = () => {
     if (platform === 'twitter') {
       if (!TWITTER_CLIENT_ID) return setError('Falta el VITE_TWITTER_CLIENT_ID en el archivo .env local o no lo detectó configurado.');
       const scopes = 'tweet.read%20tweet.write%20users.read';
-      // PKCE challenge temporal (43+ caracteres exigidos estrictamente por Twitter)
-      const pkce = 'challenge123456789challenge123456789challenge12345';
-      window.location.href = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${TWITTER_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${scopes}&state=twitter_auth&code_challenge=${pkce}&code_challenge_method=plain`;
+      // PKCE challenge (S256 hashed method)
+      const pkceChallenge = 'lDBRRSZLmuiZJrYlcsHc90TF5evyCXWCQNMz4x3SbIU';
+      window.location.href = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${TWITTER_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${scopes}&state=twitter_auth&code_challenge=${pkceChallenge}&code_challenge_method=s256`;
       return;
     }
 
