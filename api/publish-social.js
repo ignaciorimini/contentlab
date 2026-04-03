@@ -63,20 +63,63 @@ export default async function handler(request, response) {
       }
     } else if (platform === 'linkedin') {
       // API de LinkedIn para publicar contenido (UGC Post)
-      // La API REST actual de linkedin usa el URN del usuario
+      let assetUrn = null;
+
+      if (imageUrl) {
+        // 1. Obtener buffer de la foto
+        const imageRes = await fetch(imageUrl);
+        const imageBuffer = await imageRes.arrayBuffer();
+
+        // 2. Pedir permiso a LinkedIn para subir un Asset (Binary Upload)
+        const registerReq = await fetch('https://api.linkedin.com/v2/assets?action=registerUpload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accountData.access_token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            registerUploadRequest: {
+              recipes: ["urn:li:digitalmediaRecipe:feedshare-image"],
+              owner: `urn:li:person:${accountData.platform_account_id}`,
+              serviceRelationships: [{
+                relationshipType: "OWNER",
+                identifier: "urn:li:userGeneratedContent"
+              }]
+            }
+          })
+        });
+        const registerData = await registerReq.json();
+
+        if (registerData && registerData.value) {
+          assetUrn = registerData.value.asset;
+          const uploadUrl = registerData.value.uploadMechanism["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"].uploadUrl;
+
+          // 3. Subir los bytes binarios de la imagen
+          const uploadReq = await fetch(uploadUrl, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${accountData.access_token}` },
+            body: Buffer.from(imageBuffer)
+          });
+
+          if (!uploadReq.ok) {
+            assetUrn = null;
+          }
+        }
+      }
+
       const linkedinPayload = {
         author: `urn:li:person:${accountData.platform_account_id}`,
         lifecycleState: "PUBLISHED",
         specificContent: {
           "com.linkedin.ugc.ShareContent": {
             shareCommentary: { text: text },
-            shareMediaCategory: imageUrl ? "ARTICLE" : "NONE",
-            ...(imageUrl ? {
+            shareMediaCategory: assetUrn ? "IMAGE" : "NONE",
+            ...(assetUrn ? {
               media: [{
                 status: "READY",
-                description: { text: "Imagen adjunta de Content Lab" },
-                originalUrl: imageUrl,
-                title: { text: "Contenido Visual" }
+                description: { text: "Contenido de Content Lab" },
+                media: assetUrn,
+                title: { text: "Ver contenido" }
               }]
             } : {})
           }
