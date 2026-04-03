@@ -69,9 +69,16 @@ export default async function handler(request, response) {
         lifecycleState: "PUBLISHED",
         specificContent: {
           "com.linkedin.ugc.ShareContent": {
-            // Si la persona tiene imagen podemos adjuntarla como articulo/enlace para simplificar
-            shareCommentary: { text: text + (imageUrl ? `\\n\\n${imageUrl}` : '') },
-            shareMediaCategory: "NONE"
+            shareCommentary: { text: text },
+            shareMediaCategory: imageUrl ? "ARTICLE" : "NONE",
+            ...(imageUrl ? {
+              media: [{
+                status: "READY",
+                description: { text: "Imagen adjunta de Content Lab" },
+                originalUrl: imageUrl,
+                title: { text: "Contenido Visual" }
+              }]
+            } : {})
           }
         },
         visibility: {
@@ -98,7 +105,8 @@ export default async function handler(request, response) {
       // API de Twitter V2 (Crear un Tweet)
       // Nota: Subir imágenes a Twitter requiere el endpoint v1.1 multipart, por MVP dejaremos el texto + link de la imagen
       const tweetText = text.length > 280 ? text.substring(0, 277) + "..." : text;
-      const finalTweetText = imageUrl ? `${tweetText}\\n${imageUrl}` : tweetText;
+      // Añadimos la url de la imagen directamente con un enter real si es que existe
+      const finalTweetText = imageUrl ? `${tweetText}\n\n${imageUrl}` : tweetText;
 
       const twitterReq = await fetch('https://api.twitter.com/2/tweets', {
         method: 'POST',
