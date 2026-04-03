@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import Sidebar from '../components/Sidebar';
-import { 
-  Instagram, 
-  Linkedin, 
-  Twitter, 
-  Globe, 
-  Plus, 
-  Trash2, 
+import {
+  Instagram,
+  Linkedin,
+  Twitter,
+  Globe,
+  Plus,
+  Trash2,
   CheckCircle2,
   AlertCircle,
   X
@@ -19,7 +19,7 @@ const Integrations = () => {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState('');
@@ -28,8 +28,10 @@ const Integrations = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // ENV variables para Facebook/Instagram
+  // ENV variables para Redes Sociales
   const FACEBOOK_CLIENT_ID = import.meta.env.VITE_FACEBOOK_CLIENT_ID || '';
+  const LINKEDIN_CLIENT_ID = import.meta.env.VITE_LINKEDIN_CLIENT_ID || '';
+  const TWITTER_CLIENT_ID = import.meta.env.VITE_TWITTER_CLIENT_ID || '';
   const REDIRECT_URI = window.location.origin + '/integrations';
 
   useEffect(() => {
@@ -41,42 +43,47 @@ const Integrations = () => {
     const code = searchParams.get('code');
     const state = searchParams.get('state');
 
-    if (code && state === 'instagram_auth') {
-      setLoading(true);
-      setError('Intercambiando código con Meta de forma segura...');
-      
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        // Llamar a nuestra Serverless Function de Vercel
-        const response = await fetch('/api/auth-instagram', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`
-          },
-          body: JSON.stringify({ 
-            code, 
-            redirectUri: REDIRECT_URI 
-          })
-        });
+    if (code) {
+      if (state === 'instagram_auth' || state === 'linkedin_auth' || state === 'twitter_auth') {
+        const platformMap: Record<string, string> = {
+          'instagram_auth': 'instagram',
+          'linkedin_auth': 'linkedin',
+          'twitter_auth': 'twitter'
+        };
+        const platform = platformMap[state];
 
-        const result = await response.json();
-        
-        if (!response.ok) throw new Error(result.error || 'Error desconocido del servidor');
+        setLoading(true);
+        setError(`Intercambiando código con ${platform} de forma segura...`);
 
-        // Éxito: Agregamos la nueva cuenta a nuestro estado en UI
-        setAccounts((prev) => [...prev, result.account]);
-        setError('');
-        alert('¡Cuenta de Instagram conectada exitosamente!');
-        
-      } catch (err: any) {
-        console.error(err);
-        setError('Falló la conexión de Instagram: ' + err.message);
-      } finally {
-        // Limpiamos la URL para no intentar volver a conectarnos al regargar la página
-        setSearchParams({});
-        setLoading(false);
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+
+          const response = await fetch(`/api/auth-${platform}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session?.access_token}`
+            },
+            body: JSON.stringify({
+              code,
+              redirectUri: REDIRECT_URI,
+              codeVerifier: 'challenge' // Twitter V2 PKCE support
+            })
+          });
+
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || 'Error desconocido del servidor');
+
+          setAccounts((prev) => [...prev, result.account]);
+          setError('');
+          alert(`¡Cuenta de ${platform} conectada exitosamente!`);
+        } catch (err: any) {
+          console.error(err);
+          setError(`Falló la conexión de ${platform}: ` + err.message);
+        } finally {
+          setSearchParams({});
+          setLoading(false);
+        }
       }
     }
   };
@@ -89,7 +96,7 @@ const Integrations = () => {
         .from('social_accounts')
         .select('*')
         .eq('user_id', user.id);
-      
+
       if (!fetchError && data) {
         setAccounts(data);
       }
@@ -99,25 +106,24 @@ const Integrations = () => {
 
   const handleConnect = (platform: string) => {
     if (platform === 'instagram') {
-      if (!FACEBOOK_CLIENT_ID) {
-        setError('Falta el VITE_FACEBOOK_CLIENT_ID en el archivo .env');
-        return;
-      }
-      
-      // Para publicar en IG, se exige usar la API de Facebook Graph y que el IG sea cuenta Profesional vinculada a una Fanpage.
-      const scopes = [
-        'instagram_basic',
-        'instagram_content_publish',
-        'instagram_manage_insights',
-        'pages_show_list',
-        'pages_read_engagement',
-        'pages_manage_metadata',
-        'business_management'
-      ].join(',');
+      if (!FACEBOOK_CLIENT_ID) return setError('Falta el VITE_FACEBOOK_CLIENT_ID en el archivo .env');
+      const scopes = ['instagram_basic', 'instagram_content_publish', 'instagram_manage_insights', 'pages_show_list', 'pages_read_engagement', 'pages_manage_metadata', 'business_management'].join(',');
+      window.location.href = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${FACEBOOK_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&state=instagram_auth&scope=${scopes}&response_type=code`;
+      return;
+    }
 
-      const facebookOAuthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${FACEBOOK_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&state=instagram_auth&scope=${scopes}&response_type=code`;
-      
-      window.location.href = facebookOAuthUrl;
+    if (platform === 'linkedin') {
+      if (!LINKEDIN_CLIENT_ID) return setError('Falta el VITE_LINKEDIN_CLIENT_ID en el archivo .env');
+      const scopes = 'openid%20profile%20w_member_social%20email';
+      window.location.href = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${LINKEDIN_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&state=linkedin_auth&scope=${scopes}`;
+      return;
+    }
+
+    if (platform === 'twitter') {
+      if (!TWITTER_CLIENT_ID) return setError('Falta el VITE_TWITTER_CLIENT_ID en el archivo .env');
+      const scopes = 'tweet.read%20tweet.write%20users.read%20offline.access';
+      // PKCE dummy challenge para la versión inicial (la API valida que se mandó algo)
+      window.location.href = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${TWITTER_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${scopes}&state=twitter_auth&code_challenge=challenge&code_challenge_method=plain`;
       return;
     }
 
@@ -154,7 +160,7 @@ const Integrations = () => {
         .single();
 
       if (insertError) throw insertError;
-      
+
       setAccounts([...accounts, data]);
       setIsModalOpen(false);
     } catch (err: any) {
@@ -166,13 +172,13 @@ const Integrations = () => {
 
   const handleDisconnect = async (id: string) => {
     if (!confirm('¿Estás seguro de que deseas desconectar esta cuenta?')) return;
-    
+
     try {
       const { error } = await supabase
         .from('social_accounts')
         .delete()
         .eq('id', id);
-        
+
       if (error) throw error;
       setAccounts(accounts.filter(a => a.id !== id));
     } catch (err: any) {
@@ -228,7 +234,7 @@ const Integrations = () => {
                   </div>
                   <h3 className="acc-name">{acc.account_name || 'Cuenta vinculada'}</h3>
                   <p className="acc-platform">{acc.platform.charAt(0).toUpperCase() + acc.platform.slice(1)}</p>
-                  
+
                   <div className="acc-actions">
                     <button onClick={() => handleDisconnect(acc.id)} className="btn-disconnect">
                       <Trash2 size={14} /> Desconectar
@@ -249,7 +255,7 @@ const Integrations = () => {
           <div className="platforms-grid">
             {platforms.map(platform => {
               const connectedCount = accounts.filter(a => a.platform === platform.id).length;
-              
+
               return (
                 <div key={platform.id} className="platform-card">
                   <div className="platform-icon">
@@ -281,7 +287,7 @@ const Integrations = () => {
             <button className="modal-close" onClick={() => setIsModalOpen(false)}>
               <X size={20} />
             </button>
-            
+
             <div className="modal-header">
               <div className="modal-icon">
                 {renderPlatformIcon(selectedPlatform)}
@@ -293,9 +299,9 @@ const Integrations = () => {
             <form onSubmit={saveConnection} className="modal-form">
               <div className="form-group">
                 <label>Nombre de la Cuenta (Ej: @mi_marca)</label>
-                <input 
-                  type="text" 
-                  value={accountName} 
+                <input
+                  type="text"
+                  value={accountName}
                   onChange={(e) => setAccountName(e.target.value)}
                   placeholder="Ej: @contentlab"
                   required
@@ -304,9 +310,9 @@ const Integrations = () => {
 
               <div className="form-group">
                 <label>Access Token / API Key</label>
-                <input 
-                  type="password" 
-                  value={accessToken} 
+                <input
+                  type="password"
+                  value={accessToken}
                   onChange={(e) => setAccessToken(e.target.value)}
                   placeholder="Pega tu token aquí..."
                   required

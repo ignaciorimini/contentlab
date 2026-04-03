@@ -156,7 +156,7 @@ const AICopilot = () => {
                                         {msg.role === 'assistant' ? <Bot size={20} /> : <User size={20} />}
                                     </div>
                                     <div className="message-content">
-                                        <div dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br/>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>') }} />
+                                        <div dangerouslySetInnerHTML={{ __html: msg.content.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br/>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>') }} />
                                     </div>
                                 </div>
                             </div>
