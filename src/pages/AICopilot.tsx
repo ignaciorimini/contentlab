@@ -2,8 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import Sidebar from '../components/Sidebar';
 import { supabase } from '../lib/supabase';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Send, Bot, User, Sparkles, Loader2, ArrowRight } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
 import './AICopilot.css';
 
 interface Message {
@@ -18,7 +17,6 @@ const AICopilot = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [userContent, setUserContent] = useState<any[]>([]);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const navigate = useNavigate();
 
     useEffect(() => {
         // Initial welcome message
@@ -127,10 +125,6 @@ const AICopilot = () => {
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const handleQuickAction = (prompt: string) => {
-        navigate('/create', { state: { initialPrompt: prompt } });
     };
 
     return (
