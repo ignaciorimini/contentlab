@@ -36,17 +36,23 @@ const AICopilot = () => {
     }, [messages]);
 
     const fetchUserContext = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            // Get latest 10 contents
-            const { data } = await supabase
-                .from('content')
-                .select('*')
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false })
-                .limit(10);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
 
-            if (data) setUserContent(data);
+            // Obtener posts reales de Instagram con métricas
+            const res = await fetch('/api/instagram-history?limit=10', {
+                headers: { 'Authorization': `Bearer ${session.access_token}` }
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.data) {
+                    setUserContent(data.data);
+                }
+            }
+        } catch (e) {
+            console.error("Error al obtener contexto de redes sociales", e);
         }
     };
 
@@ -80,21 +86,21 @@ const AICopilot = () => {
 
             // Build context string from user content
             const recentPostsText = userContent.length > 0
-                ? userContent.map(c => `[${c.content_type}] Título: ${c.title}`).join('\\n')
-                : "El usuario aún no ha creado posteos en Content Lab.";
+                ? userContent.map(c => `[Post tipo ${c.media_type || 'POST'}] Caption: ${c.caption?.substring(0, 100) || 'Sin descripción'}\nMétricas: Likes ${c.like_count || 0}, Comments ${c.comments_count || 0}${c.advanced_metrics ? `, Saves ${c.advanced_metrics.saved || 0}, Plays ${c.advanced_metrics.plays || 0}` : ''}`).join('\n\n')
+                : "El usuario aún no ha vinculado sus redes o no tiene posteos recientes.";
 
             const systemContext = `
         Eres el "AI Copilot" de Content Lab, un estratega de contenido, experto en marketing digital y redes sociales.
-        Ayudas al usuario a generar ideas, analizar sus patrones y sugerir próximos contenidos (carruseles de instagram, posteos de linkedin, etc).
+        Ayudas al usuario a generar ideas, analizar sus patrones y sugerir próximos contenidos.
         
-        Aquí tienes el contexto del usuario (sus últimos ${userContent.length} contenidos generados en la plataforma):
+        Aquí tienes el contexto del usuario (sus últimos ${userContent.length} contenidos publicados en sus redes con sus MÉTRICAS reales de engagement):
         ${recentPostsText}
 
         INSTRUCCIONES CLAVES:
-        1. Responde de manera profesional, creativa, pero concisa (no seas demasiado extenso).
-        2. Usa el estilo de formateo markdown.
-        3. Fomenta al usuario a usar el creador de contenido de la plataforma.
-        4. Si el usuario te pide crear un contenido directamente, puedes sugerir un prompt o darle el boton de acción. (Por ahora puedes usar formato texto libre, y sugerir títulos o copys).
+        1. Analiza fuertemente el engagement del usuario. Identifica qué formato o temática le dio más likes, comentarios, o guardados (saves) y recomienda cosas basadas en ese éxito.
+        2. Responde de manera profesional, creativa, proactiva y concisa.
+        3. Usa formato texto markdown.
+        4. Si notas contenidos con muy bajo rendimiento, sugiere un nuevo enfoque. 
       `;
 
             // Build history
@@ -150,7 +156,7 @@ const AICopilot = () => {
                                         {msg.role === 'assistant' ? <Bot size={20} /> : <User size={20} />}
                                     </div>
                                     <div className="message-content">
-                                        <div dangerouslySetInnerHTML={{ __html: msg.content.replace(/\\n/g, '<br/>').replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>') }} />
+                                        <div dangerouslySetInnerHTML={{ __html: msg.content.replace(/\n/g, '<br/>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>') }} />
                                     </div>
                                 </div>
                             </div>
