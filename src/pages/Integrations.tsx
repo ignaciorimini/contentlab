@@ -67,7 +67,7 @@ const Integrations = () => {
             body: JSON.stringify({
               code,
               redirectUri: REDIRECT_URI,
-              codeVerifier: 'challenge' // Twitter V2 PKCE support
+              codeVerifier: 'challenge123456789challenge123456789challenge12345' // Twitter V2 PKCE support
             })
           });
 
@@ -120,10 +120,11 @@ const Integrations = () => {
     }
 
     if (platform === 'twitter') {
-      if (!TWITTER_CLIENT_ID) return setError('Falta el VITE_TWITTER_CLIENT_ID en el archivo .env');
+      if (!TWITTER_CLIENT_ID) return setError('Falta el VITE_TWITTER_CLIENT_ID en el archivo .env local o no lo detectó configurado.');
       const scopes = 'tweet.read%20tweet.write%20users.read%20offline.access';
-      // PKCE dummy challenge para la versión inicial (la API valida que se mandó algo)
-      window.location.href = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${TWITTER_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${scopes}&state=twitter_auth&code_challenge=challenge&code_challenge_method=plain`;
+      // PKCE challenge temporal (43+ caracteres exigidos estrictamente por Twitter)
+      const pkce = 'challenge123456789challenge123456789challenge12345';
+      window.location.href = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${TWITTER_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${scopes}&state=twitter_auth&code_challenge=${pkce}&code_challenge_method=plain`;
       return;
     }
 

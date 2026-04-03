@@ -61,8 +61,61 @@ export default async function handler(request, response) {
       if (publishData.error) {
         throw new Error(publishData.error.message || "Error al publicar en Instagram");
       }
+    } else if (platform === 'linkedin') {
+      // API de LinkedIn para publicar contenido (UGC Post)
+      // La API REST actual de linkedin usa el URN del usuario
+      const linkedinPayload = {
+        author: `urn:li:person:${accountData.platform_account_id}`,
+        lifecycleState: "PUBLISHED",
+        specificContent: {
+          "com.linkedin.ugc.ShareContent": {
+            // Si la persona tiene imagen podemos adjuntarla como articulo/enlace para simplificar
+            shareCommentary: { text: text + (imageUrl ? `\\n\\n${imageUrl}` : '') },
+            shareMediaCategory: "NONE"
+          }
+        },
+        visibility: {
+          "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+        }
+      };
+
+      const liReq = await fetch('https://api.linkedin.com/v2/ugcPosts', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accountData.access_token}`,
+          'X-Restli-Protocol-Version': '2.0.0',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(linkedinPayload)
+      });
+
+      const liData = await liReq.json();
+      if (liData.error || liData.status >= 400) {
+        throw new Error(liData.message || "Error al publicar en LinkedIn");
+      }
+
+    } else if (platform === 'twitter') {
+      // API de Twitter V2 (Crear un Tweet)
+      // Nota: Subir imágenes a Twitter requiere el endpoint v1.1 multipart, por MVP dejaremos el texto + link de la imagen
+      const tweetText = text.length > 280 ? text.substring(0, 277) + "..." : text;
+      const finalTweetText = imageUrl ? `${tweetText}\\n${imageUrl}` : tweetText;
+
+      const twitterReq = await fetch('https://api.twitter.com/2/tweets', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accountData.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ text: finalTweetText })
+      });
+
+      const twitterData = await twitterReq.json();
+      if (twitterData.errors || twitterData.title === 'Unauthorized') {
+        throw new Error(twitterData.detail || "Error al publicar en X (Twitter)");
+      }
+
     } else {
-      // Simular un retraso de procesamiento para dar feedback al usuario en otras plataformas no implementadas
+      // Simular un retraso para otras desconocidas
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
